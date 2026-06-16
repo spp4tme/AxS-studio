@@ -82,7 +82,8 @@ function Station({ data, portal }) {
     const op = smoothstep(a)
     ref.current.style.opacity = op
     ref.current.style.setProperty('--a', op.toFixed(3))
-    ref.current.style.pointerEvents = op > 0.6 ? 'auto' : 'none'
+    // NB: the panel itself stays pointer-events:none (CSS) so it never eats the
+    // mouse wheel — only interactive children (.btn) opt back in.
   })
 
   const Panel = PANELS[data.key]

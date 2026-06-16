@@ -233,7 +233,8 @@
 .w > span { display: inline-block; }
 
 /* ================================================================ NAV */
-.nav { position: fixed; top: 0; left: 0; right: 0; z-index: 50; }
+.nav { position: fixed; top: 0; left: 0; right: 0; z-index: 50; pointer-events: none; }
+.nav__brand, .nav__links a, .nav__cta { pointer-events: auto; }
 .nav::before {
   content: '';
   position: absolute; inset: 0;
@@ -489,7 +490,9 @@
 .scrollhint__bar { width: 1px; height: 34px; background: linear-gradient(var(--accent), transparent); }
 
 /* ---- Anchored 3D content panels (rendered as 3D-anchored bubbles) ---- */
-.p3-wrap { width: 100%; transform: scale(calc(0.82 + 0.18 * var(--a, 1))); transform-origin: 50% 60%; }
+/* pointer-events:none so panels never intercept the mouse wheel; only buttons opt in */
+.p3-wrap { width: 100%; transform: scale(calc(0.82 + 0.18 * var(--a, 1))); transform-origin: 50% 60%; pointer-events: none; }
+.p3-wrap .btn { pointer-events: auto; }
 
 .p3 { color: var(--ink); position: relative; }
 .p3--wide {
