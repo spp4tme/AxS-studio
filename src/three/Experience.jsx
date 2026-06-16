@@ -3,7 +3,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { ScrollControls, useScroll, Html } from '@react-three/drei'
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing'
 import * as THREE from 'three'
-import { NodeField } from './NodeField'
+import { WorkflowField } from './WorkflowField'
 import { camCurve, lookCurve, STATIONS, SCROLL_PAGES } from '../lib/journey'
 import { scrollState } from '../lib/scrollState'
 import { PANELS } from '../components/Panels'
@@ -19,10 +19,11 @@ function detectTier() {
   } catch (e) {
     return { ok: false, low: true }
   }
+  // Only degrade on genuinely weak / mobile devices — a 4-core laptop is common.
   const low =
-    window.innerWidth < 768 ||
-    (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) ||
-    (navigator.deviceMemory && navigator.deviceMemory <= 4)
+    window.innerWidth < 700 ||
+    (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2) ||
+    (navigator.deviceMemory && navigator.deviceMemory < 2)
   return { ok: true, low }
 }
 
@@ -48,7 +49,9 @@ function Rig() {
 
   useFrame((_, dtRaw) => {
     const dt = Math.min(dtRaw, 0.1)
-    tRef.current = THREE.MathUtils.damp(tRef.current, scroll.offset, 4, dt)
+    // Single smoothing source: ScrollControls already damps `offset`. A light extra
+    // damp keeps it buttery without the laggy "hard to scroll" double-damping.
+    tRef.current = THREE.MathUtils.damp(tRef.current, scroll.offset, 9, dt)
     const t = clamp01(tRef.current)
     scrollState.progress = t
 
@@ -75,11 +78,11 @@ function Station({ data, portal }) {
   useFrame(() => {
     if (!ref.current) return
     const d = Math.abs(scroll.offset - data.at)
-    const a = clamp01(1 - d / 0.075)
+    const a = clamp01(1 - d / 0.08)
     const op = smoothstep(a)
     ref.current.style.opacity = op
+    ref.current.style.setProperty('--a', op.toFixed(3))
     ref.current.style.pointerEvents = op > 0.6 ? 'auto' : 'none'
-    ref.current.style.transform = `translateY(${(1 - op) * 14}px)`
   })
 
   const Panel = PANELS[data.key]
@@ -105,8 +108,6 @@ export default function Experience() {
   const portal = useRef(null)
   if (!tier.ok) return <div className="scene-fallback" aria-hidden="true" />
 
-  const count = tier.low ? 380 : 820
-  const packetCount = tier.low ? 22 : 42
   const dpr = tier.low ? [1, 1.3] : [1, 1.75]
 
   return (
@@ -123,8 +124,8 @@ export default function Experience() {
       >
         <color attach="background" args={['#07080a']} />
         <fogExp2 attach="fog" args={['#07080a', 0.012]} />
-        <ScrollControls pages={SCROLL_PAGES} damping={0.18}>
-          <NodeField count={count} packetCount={packetCount} />
+        <ScrollControls pages={SCROLL_PAGES} damping={0.12}>
+          <WorkflowField showLabels={!tier.low} portal={portal} />
           {STATIONS.map((s) => (
             <Station key={s.key} data={s} portal={portal} />
           ))}
