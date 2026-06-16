@@ -1,48 +1,55 @@
 import { useEffect, useRef } from 'react'
-import { gsap } from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { content } from '../content'
-import { scrollToHash } from '../lib/useSmoothScroll'
+import { STATIONS } from '../lib/journey'
+import { scrollState } from '../lib/scrollState'
+
+const HREF_TO_KEY = {
+  '#services': 'services',
+  '#methode': 'process',
+  '#cas': 'cases',
+  '#duo': 'duo',
+  '#contact': 'cta',
+  '#top': 'hero',
+}
+
+function goTo(key) {
+  const st = STATIONS.find((s) => s.key === key)
+  if (st && window.__journey) window.__journey.scrollTo(st.at)
+}
 
 export default function Nav() {
   const bar = useRef(null)
-
   useEffect(() => {
-    if (!bar.current) return
-    gsap.set(bar.current, { scaleX: 0, transformOrigin: 'left center' })
-    const st = ScrollTrigger.create({
-      start: 0,
-      end: 'max',
-      onUpdate: (self) => {
-        gsap.set(bar.current, { scaleX: self.progress })
-      },
-    })
-    return () => st.kill()
+    let raf
+    const loop = () => {
+      if (bar.current) bar.current.style.transform = `scaleX(${scrollState.progress || 0})`
+      raf = requestAnimationFrame(loop)
+    }
+    raf = requestAnimationFrame(loop)
+    return () => cancelAnimationFrame(raf)
   }, [])
 
-  const onNav = (e, href) => {
+  const onNav = (e, key) => {
     e.preventDefault()
-    scrollToHash(href)
+    goTo(key)
   }
 
   return (
     <header className="nav">
       <div className="nav__inner wrap">
-        <a href="#top" className="nav__brand" onClick={(e) => onNav(e, '#top')} data-cursor>
-          <span className="nav__mono">A</span>
+        <a href="#top" className="nav__brand" onClick={(e) => onNav(e, 'hero')} data-cursor>
+          <span>A</span>
           <span className="nav__x">×</span>
-          <span className="nav__mono">S</span>
+          <span>S</span>
         </a>
-
         <nav className="nav__links">
           {content.nav.map((item) => (
-            <a key={item.href} href={item.href} onClick={(e) => onNav(e, item.href)}>
+            <a key={item.href} href={item.href} onClick={(e) => onNav(e, HREF_TO_KEY[item.href])}>
               {item.label}
             </a>
           ))}
         </nav>
-
-        <a href="#contact" className="nav__cta mono" onClick={(e) => onNav(e, '#contact')} data-cursor>
+        <a href="#contact" className="nav__cta mono" onClick={(e) => onNav(e, 'cta')} data-cursor>
           {content.cta.button}
         </a>
       </div>
